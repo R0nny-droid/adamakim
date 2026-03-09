@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jardín de Tulipanes para ti Adamaris</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-cielo: #fdfaf0;
+            --cesped: #2d6a4f;
+            --tallo: #5a825a;
+            --linea: #4a3728;
+        }
+
+        body {
+            background-color: var(--bg-cielo);
+            font-family: 'Quicksand', sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        header {
+            text-align: center;
+            margin-top: 40px;
+            z-index: 10;
+        }
+        h1 { font-family: 'Pacifico', cursive; color: #7b2cbf; margin: 0; font-size: 2.2rem; }
+        p { color: var(--linea); font-weight: 700; margin-top: 5px; }
+
+        /* --- JARDÍN Y ALINEACIÓN --- */
+        .garden {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        .grass-base {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 120px;
+            background: var(--cesped);
+            border-top: 5px solid #1b4332;
+            z-index: 5;
+        }
+
+        .flowers-row {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 20px; /* Espacio uniforme entre tulipanes */
+            padding-bottom: 100px; /* Alineados sobre el césped */
+            z-index: 10;
+            width: 90%;
+        }
+
+        /* --- ESTRUCTURA DEL TULIPÁN --- */
+        .flower-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .tulip-head {
+            position: relative;
+            width: 44px;
+            height: 50px;
+            background: transparent;
+            transition: transform 0.4s ease;
+        }
+
+        /* Pétalos con animación de "Abrirse" */
+        .petal {
+            position: absolute;
+            background: inherit; 
+            border: 2px solid var(--linea);
+            box-sizing: border-box;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .petal.center {
+            width: 26px;
+            height: 42px;
+            border-radius: 50% 50% 25% 25%;
+            left: 9px;
+            bottom: 4px;
+            z-index: 1;
+        }
+
+        .petal.left {
+            width: 30px;
+            height: 48px;
+            border-radius: 50% 50% 15% 45%;
+            left: 0;
+            bottom: 0;
+            z-index: 2;
+            transform-origin: bottom right;
+        }
+
+        .petal.right {
+            width: 30px;
+            height: 48px;
+            border-radius: 50% 50% 45% 15%;
+            right: 0;
+            bottom: 0;
+            z-index: 2;
+            transform-origin: bottom left;
+        }
+
+        /* Animación al hacer clic */
+        .flower-container.open .petal.left { transform: rotate(-35deg); }
+        .flower-container.open .petal.right { transform: rotate(35deg); }
+        .flower-container.open .petal.center { transform: translateY(-5px) scale(1.1); }
+
+        .stem {
+            width: 4px;
+            height: 180px;
+            background: var(--tallo);
+            border-radius: 4px;
+        }
+
+        /* --- MENSAJES ADELANTE --- */
+        .message {
+            position: absolute;
+            bottom: 250px; /* Encima de la flor */
+            background: white;
+            padding: 10px 15px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: var(--linea);
+            white-space: nowrap;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s ease;
+            z-index: 100;
+            pointer-events: none;
+            border: 2px solid #eee;
+        }
+
+        .message::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 8px solid transparent;
+            border-top-color: white;
+        }
+
+        .flower-container.open .message {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- REPRODUCTOR --- */
+        .player-container {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(255,255,255,0.9);
+            padding: 8px;
+            border-radius: 50px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: 2px solid var(--tallo);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Para Adamaris</h1>
+        <p>Toca cada tulipán para verlo florecer</p>
+    </header>
+
+    <div class="garden">
+        <div class="flowers-row" id="garden-row">
+            </div>
+        <div class="grass-base"></div>
+    </div>
+
+    <div class="player-container">
+        <audio id="music" controls loop style="height: 30px; width: 180px;">
+            <source src="https://files.catbox.moe/33irm9.mpeg" type="audio/mpeg">
+        </audio>
+    </div>
+
+    <script>
+        const gardenRow = document.getElementById('garden-row');
+        const colors = ['#FFB3BA', '#BAE1FF', '#BAFFC9', '#FFFFBA', '#FFDAC1', '#E0BBE4', '#FF9AA2', '#B5EAD7', '#C7CEEA', '#F3D1F4'];
+        const mensajes = [
+            "Admiro cómo proteges tu esencia y te mantienes fiel a lo que crees", "Tu autenticidad es lo que te hace realmente brillar entre la multitud", "Cada paso que das es un testimonio de tu coraje y tu resiliencia", 
+            "Eres libre, valiente y dueña absoluta de tu propio destino", "Floreces con una gracia única en cada situación, sin importar la adversidad", "Mi niña berrinchuda, espero qu te halla gustado este pequeño detalle y que lo hayas disfrutado este dia con tu mami, feliz dia a ti...", 
+            "Hoy celebramos a la mujer que eres, pero también a la niña que fuiste y a la leyenda en la que te convertirás", "Eres completa por ti misma; no eres la mitad de nada, eres un universo entero", "Que este 8 de marzo sea un recordatorio de que tú eres tu prioridad más importante", "Eres una mujer extraordinaria, capaz de brillar incluso en los días más grises"
+        ];
+
+        function createGarden() {
+            for (let i = 0; i < colors.length; i++) {
+                const container = document.createElement('div');
+                container.className = 'flower-container';
+                
+                container.innerHTML = `
+                    <div class="message">${mensajes[i]}</div>
+                    <div class="tulip-head" style="background: ${colors[i]}">
+                        <div class="petal center"></div>
+                        <div class="petal left"></div>
+                        <div class="petal right"></div>
+                    </div>
+                    <div class="stem"></div>
+                `;
+
+                container.onclick = (e) => {
+                    e.stopPropagation();
+                    // Cerrar otros para que solo uno esté abierto
+                    document.querySelectorAll('.flower-container').forEach(f => {
+                        if(f !== container) f.classList.remove('open');
+                    });
+                    container.classList.toggle('open');
+                    document.getElementById('music').play().catch(() => {});
+                };
+
+                gardenRow.appendChild(container);
+            }
+        }
+
+        // Cerrar al tocar el fondo
+        document.body.onclick = () => {
+            document.querySelectorAll('.flower-container').forEach(f => f.classList.remove('open'));
+        };
+
+        createGarden();
+    </script>
+</body>
+</html>
